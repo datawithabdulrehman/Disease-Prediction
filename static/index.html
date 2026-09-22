@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diabetes Risk Screening</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,560&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --paper: #FAFAF8;
+      --ink: #16191D;
+      --muted: #767D74;
+      --line: #E4E3DD;
+      --line-strong: #C7C6BE;
+      --teal: #1F6E5C;
+      --teal-ink: #143F35;
+      --brick: #9C4A3A;
+      --radius: 2px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrap {
+      max-width: 620px;
+      margin: 0 auto;
+      padding: clamp(3rem, 8vw, 6rem) 1.5rem 5rem;
+    }
+
+    header {
+      margin-bottom: 3.75rem;
+      max-width: 720px;
+    }
+
+    header h1 {
+      font-family: 'Fraunces', serif;
+      font-weight: 560;
+      font-size: clamp(1.9rem, 5vw, 2.5rem);
+      letter-spacing: -0.015em;
+      margin: 0 0 0.85rem;
+    }
+
+    header p {
+      color: var(--muted);
+      max-width: 42ch;
+      margin: 0;
+      font-size: 0.96rem;
+    }
+
+    .model-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 1.4rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.74rem;
+      color: var(--teal-ink);
+    }
+
+    .model-tag::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--teal);
+    }
+
+    .section-title {
+      font-size: 0.72rem;
+      letter-spacing: 0.03em;
+      color: var(--muted);
+      margin: 3rem 0 1.1rem;
+      padding-bottom: 0.7rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section-title:first-of-type {
+      margin-top: 0;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem 1.75rem;
+    }
+
+    @media (max-width: 520px) {
+      .field-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.83rem;
+      color: var(--ink);
+      margin-bottom: 0.45rem;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      font-family: inherit;
+      font-size: 0.94rem;
+      color: var(--ink);
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--line-strong);
+      border-radius: 0;
+      padding: 0.4rem 0.05rem 0.5rem;
+      outline: none;
+      transition: border-color 0.15s ease;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .field select {
+      background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+        linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+      background-position: calc(100% - 4px) 55%, calc(100% - 0px) 55%;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-bottom-color: var(--teal);
+    }
+
+    #submit-btn {
+      margin-top: 3rem;
+      width: 100%;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      color: var(--paper);
+      background: var(--teal-ink);
+      border: none;
+      border-radius: var(--radius);
+      padding: 0.95rem 1.4rem;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    #submit-btn:hover {
+      background: var(--teal);
+    }
+
+    #submit-btn:disabled {
+      background: var(--line-strong);
+      color: var(--muted);
+      cursor: wait;
+    }
+
+    #error-box {
+      margin-top: 0.9rem;
+      color: var(--brick);
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    /* ---- Result reveal (inline, single deliberate moment) ---- */
+    #result-card {
+      margin-top: 3.5rem;
+      padding-top: 2.5rem;
+      border-top: 1px solid var(--line);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    #result-card.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .result-eyebrow {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .prob-readout {
+      font-family: 'Fraunces', serif;
+      font-weight: 560;
+      font-size: clamp(3rem, 12vw, 4.2rem);
+      line-height: 1.05;
+      margin: 0.3rem 0 0;
+      letter-spacing: -0.02em;
+    }
+
+    .result-meta {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .result-meta strong {
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .meter-track {
+      margin-top: 1.3rem;
+      height: 3px;
+      background: var(--line);
+    }
+
+    .meter-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--teal);
+      transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1), background 0.4s ease;
+    }
+
+    footer {
+      margin-top: 4.5rem;
+      padding-top: 1.8rem;
+      border-top: 1px solid var(--line);
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="wrap">
+    <header>
+      <h1>Diabetes risk screening</h1>
+      <p>Enter a patient's clinical and lifestyle values to estimate diabetes risk. This is a screening aid, not a
+        diagnosis.</p>
+      <div class="model-tag" id="model-tag">loading model</div>
+    </header>
+
+    <form id="predict-form">
+      <div id="fields-container">Loading form fields…</div>
+      <button type="submit" id="submit-btn">Estimate risk</button>
+      <p id="error-box"></p>
+    </form>
+
+    <div id="result-card">
+      <div class="result-eyebrow">Estimated probability of diabetes</div>
+      <div class="prob-readout" id="prob-readout">0%</div>
+      <div class="meter-track">
+        <div class="meter-fill" id="meter-fill"></div>
+      </div>
+      <div class="result-meta">
+        <strong id="risk-band">—</strong> risk · predicted <strong id="pred-label">—</strong>
+      </div>
+    </div>
+
+    <footer>
+      Screening estimate only — always confirm with a qualified clinician and appropriate diagnostic testing.
+    </footer>
+  </div>
+
+  <script>
+    const API_BASE = "";
+
+    const GROUPS = [
+      { title: "Demographics", match: ["age", "gender", "education", "employment"] },
+      {
+        title: "Vitals & labs", match: ["bmi", "hba1c", "glucose", "cholesterol", "hdl", "ldl",
+          "triglycerides", "crp", "homocysteine", "blood_pressure", "systolic", "diastolic", "heart_rate"]
+      },
+      {
+        title: "Lifestyle & history", match: ["smoking", "physical_activity", "family_history",
+          "stress", "sugar", "alcohol", "salt", "sleep"]
+      },
+    ];
+
+    function groupFor(fieldName) {
+      const lower = fieldName.toLowerCase();
+      for (const g of GROUPS) {
+        if (g.match.some(k => lower.includes(k))) return g.title;
+      }
+      return "Other";
+    }
+
+    function prettyLabel(fieldName) {
+      return fieldName.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    let schema = null;
+
+    async function loadSchema() {
+      const res = await fetch(`${API_BASE}/schema`);
+      if (!res.ok) throw new Error("Could not load form schema from the API.");
+      schema = await res.json();
+
+      document.getElementById("model-tag").textContent = schema.model_name;
+
+      const grouped = {};
+      for (const col of schema.feature_order) {
+        const g = groupFor(col);
+        (grouped[g] ||= []).push(col);
+      }
+
+      const container = document.getElementById("fields-container");
+      container.innerHTML = "";
+
+      const order = ["Demographics", "Vitals & labs", "Lifestyle & history", "Other"];
+      for (const groupName of order) {
+        const cols = grouped[groupName];
+        if (!cols || cols.length === 0) continue;
+
+        const titleEl = document.createElement("div");
+        titleEl.className = "section-title";
+        titleEl.textContent = groupName;
+        container.appendChild(titleEl);
+
+        const grid = document.createElement("div");
+        grid.className = "field-grid";
+
+        for (const col of cols) {
+          const wrap = document.createElement("div");
+          wrap.className = "field";
+
+          const label = document.createElement("label");
+          label.setAttribute("for", `field-${col}`);
+          label.textContent = prettyLabel(col);
+          wrap.appendChild(label);
+
+          if (schema.categorical_cols[col]) {
+            const select = document.createElement("select");
+            select.id = `field-${col}`;
+            select.name = col;
+            for (const choice of schema.categorical_cols[col]) {
+              const opt = document.createElement("option");
+              opt.value = choice;
+              opt.textContent = choice;
+              select.appendChild(opt);
+            }
+            wrap.appendChild(select);
+          } else {
+            const input = document.createElement("input");
+            input.type = "number";
+            input.step = "any";
+            input.id = `field-${col}`;
+            input.name = col;
+            input.required = true;
+            input.placeholder = "0";
+            wrap.appendChild(input);
+          }
+
+          grid.appendChild(wrap);
+        }
+        container.appendChild(grid);
+      }
+    }
+
+    function showError(message) {
+      const box = document.getElementById("error-box");
+      box.textContent = message;
+      box.style.display = "block";
+    }
+
+    function clearError() {
+      document.getElementById("error-box").style.display = "none";
+    }
+
+    document.getElementById("predict-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearError();
+
+      const btn = document.getElementById("submit-btn");
+      btn.disabled = true;
+      btn.textContent = "Estimating…";
+
+      try {
+        const payload = {};
+        for (const col of schema.feature_order) {
+          const el = document.getElementById(`field-${col}`);
+          payload[col] = schema.categorical_cols[col] ? el.value : parseFloat(el.value);
+        }
+
+        const res = await fetch(`${API_BASE}/predict`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Prediction failed.");
+
+        const pct = (data.probability_diabetes * 100).toFixed(1);
+        document.getElementById("prob-readout").textContent = `${pct}%`;
+        document.getElementById("pred-label").textContent = data.prediction_label;
+
+        const fill = document.getElementById("meter-fill");
+        fill.style.width = `${pct}%`;
+        fill.style.background =
+          data.risk_band === "Low" ? "#1F6E5C" :
+            data.risk_band === "Moderate" ? "#A57A2E" : "#9C4A3A";
+
+        document.getElementById("risk-band").textContent = data.risk_band;
+        document.getElementById("risk-band").style.color =
+          data.risk_band === "Low" ? "#1F6E5C" :
+            data.risk_band === "Moderate" ? "#A57A2E" : "#9C4A3A";
+
+        document.getElementById("result-card").classList.add("visible");
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Estimate risk";
+      }
+    });
+
+    loadSchema().catch(err => showError(err.message));
+  </script>
+
+</body>
+
+</html>
